@@ -1,5 +1,4 @@
 const { EventEmitter } = require("events");
-const WebSocket = require("ws");
 
 class SmartWss extends EventEmitter {
   constructor(wssPath) {
@@ -30,8 +29,8 @@ class SmartWss extends EventEmitter {
     this.emit("closing");
     if (this._wss) {
       this._wss.removeAllListeners();
-      this._wss.on("close", () => this.emit("closed"));
-      this._wss.on("error", err => {
+      this._wss.addEventListener("close", () => this.emit("closed"));
+      this._wss.addEventListener("error", err => {
         if (err.message !== "WebSocket was closed before the connection was established") return;
         this.emit("error", err);
       });
@@ -63,16 +62,17 @@ class SmartWss extends EventEmitter {
     return new Promise(resolve => {
       let wssPath = this._wssPath;
       this.emit("connecting");
-      this._wss = new WebSocket(wssPath, { perMessageDeflate: false });
-      this._wss.on("open", () => {
+      this._wss = new WebSocket(wssPath);
+
+      this._wss.addEventListener("open", () => {
         this._connected = true;
         this.emit("open"); // deprecated
         this.emit("connected");
         resolve();
       });
-      this._wss.on("close", () => this._closeCallback());
-      this._wss.on("error", err => this.emit("error", err));
-      this._wss.on("message", msg => this.emit("message", msg));
+      this._wss.addEventListener("close", () => this._closeCallback());
+      this._wss.addEventListener("error", err => this.emit("error", err));
+      this._wss.addEventListener("message", msg => this.emit("message", msg.data));
     });
   }
 
